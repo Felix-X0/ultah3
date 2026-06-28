@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peta Bintang untuk Sayang</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night1:#070b1f;
+    --night2:#0e1640;
+    --night3:#1c2a63;
+    --star:#fdf6e3;
+    --gold:#f3cf7a;
+    --glow:#9fb8ff;
+    --rose:#f3a6b8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;overflow:hidden;}
+  body{
+    font-family:'Quicksand',sans-serif;
+    color:var(--star);
+    background:radial-gradient(ellipse at 50% -10%, var(--night3) 0%, var(--night2) 45%, var(--night1) 100%);
+  }
+
+  #sky{position:absolute;inset:0;z-index:1;overflow:hidden;}
+  .twinkle{
+    position:absolute; width:2px; height:2px; border-radius:50%;
+    background:var(--star);
+    animation:tw ease-in-out infinite;
+  }
+  @keyframes tw{ 0%,100%{opacity:.15;} 50%{opacity:1;} }
+
+  .moon{
+    position:absolute; top:6%; right:9%; width:64px; height:64px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fffdf2, var(--gold) 70%);
+    box-shadow:0 0 35px 10px rgba(243,207,122,.45);
+    z-index:2;
+    transition:box-shadow 1s ease, transform 1s ease;
+  }
+  .moon.bright{ box-shadow:0 0 70px 26px rgba(243,207,122,.8); transform:scale(1.15); }
+
+  .shooting-star{
+    position:absolute; width:3px; height:3px; background:#fff; border-radius:50%;
+    box-shadow:0 0 6px 2px #fff;
+    z-index:6; opacity:0;
+  }
+  .shooting-star::after{
+    content:''; position:absolute; top:0; left:0; width:90px; height:1.5px;
+    background:linear-gradient(90deg, rgba(255,255,255,.9), transparent);
+    transform:translateX(-90px) rotate(180deg); transform-origin:right center;
+  }
+  @keyframes shoot{
+    0%{ opacity:0; transform:translate(0,0); }
+    8%{ opacity:1; }
+    85%{ opacity:1; }
+    100%{ opacity:0; transform:translate(-340px, 220px); }
+  }
+
+  /* ============ SCENE 1: INTRO ============ */
+  #intro-scene{
+    position:absolute; inset:0; z-index:10;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 24px;
+    transition:opacity .7s ease;
+  }
+  #intro-scene.hide{ opacity:0; pointer-events:none; }
+
+  .eyebrow{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.3em; color:var(--rose); letter-spacing:.5px; }
+  .intro-title{
+    font-family:'Cormorant Garamond',serif; font-weight:600; font-size:3em; line-height:1.15;
+    margin:10px 0 18px;
+    background:linear-gradient(135deg, var(--star), var(--glow));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .intro-sub{ font-size:1.02em; opacity:.8; max-width:340px; margin-bottom:30px; line-height:1.6; }
+
+  .wish-btn{
+    font-family:'Quicksand',sans-serif; font-weight:700; font-size:1.05em;
+    padding:15px 36px; border-radius:50px; border:1px solid rgba(243,207,122,.6);
+    background:linear-gradient(135deg, rgba(243,207,122,.18), rgba(159,184,255,.12));
+    color:var(--star); cursor:pointer;
+    box-shadow:0 0 24px rgba(243,207,122,.25), inset 0 0 12px rgba(255,255,255,.06);
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .wish-btn:hover{ transform:translateY(-3px); box-shadow:0 0 34px rgba(243,207,122,.4); }
+
+  /* ============ SCENE 2: CONSTELLATION ============ */
+  #constellation-scene{
+    position:absolute; inset:0; z-index:5;
+    opacity:0; pointer-events:none;
+    transition:opacity .8s ease;
+  }
+  #constellation-scene.show{ opacity:1; pointer-events:auto; }
+
+  #const-svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .const-line{
+    fill:none; stroke:var(--gold); stroke-width:1.4; opacity:.85;
+    stroke-dasharray:6 6;
+    filter:drop-shadow(0 0 4px rgba(243,207,122,.6));
+  }
+  .star-point{
+    cursor:pointer;
+  }
+  .star-point circle.core{
+    fill:rgba(255,255,255,.65);
+    transition:fill .4s ease, r .3s ease;
+  }
+  .star-point.lit circle.core{ fill:var(--gold); }
+  .star-point circle.halo{
+    fill:none; stroke:rgba(243,207,122,.5); stroke-width:1;
+    opacity:0; transition:opacity .4s ease;
+  }
+  .star-point.lit circle.halo{ opacity:1; }
+  .star-point:not(.lit){ animation:pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:.6; } 50%{ opacity:1; } }
+
+  /* photo-stars: circular polaroid-like glowing photo at a constellation point */
+  .star-photo{
+    position:absolute; width:0; height:0; border-radius:50%;
+    transform:translate(-50%,-50%) scale(.2);
+    overflow:hidden;
+    border:2px solid var(--gold);
+    box-shadow:0 0 0 3px rgba(243,207,122,.15), 0 0 22px rgba(243,207,122,.55), 0 0 40px rgba(159,184,255,.3);
+    z-index:6; pointer-events:none;
+    transition:width .55s cubic-bezier(.2,.8,.2,1), height .55s cubic-bezier(.2,.8,.2,1), transform .55s cubic-bezier(.2,.8,.2,1);
+  }
+  .star-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .star-photo.grow{ width:74px; height:74px; transform:translate(-50%,-50%) scale(1); }
+
+  /* finale photo collage forming a heart, glowing softly behind the text */
+  #collage{
+    position:absolute; inset:0; z-index:1; pointer-events:none;
+  }
+  .collage-photo{
+    position:absolute; width:64px; height:64px; border-radius:50%;
+    border:2px solid rgba(243,207,122,.7);
+    box-shadow:0 0 18px rgba(243,207,122,.45);
+    overflow:hidden; opacity:0;
+    transform:translate(-50%,-50%) scale(.5);
+    transition:opacity .8s ease, transform .8s cubic-bezier(.2,.8,.2,1);
+  }
+  .collage-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .collage-photo.show{ opacity:.9; transform:translate(-50%,-50%) scale(1); }
+  @media (max-width:600px){ .collage-photo{ width:46px; height:46px; } }
+
+  #progress-label{
+    position:absolute; top:24px; left:50%; transform:translateX(-50%);
+    font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.15em;
+    color:var(--rose); opacity:.85; z-index:7; text-align:center;
+  }
+
+  .msg-bubble{
+    position:absolute; max-width:230px; transform:translate(-50%, -118%);
+    background:rgba(14,22,64,.92);
+    border:1px solid rgba(243,207,122,.5);
+    border-radius:14px; padding:12px 16px;
+    font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.15em; line-height:1.4;
+    color:var(--star); text-align:center;
+    box-shadow:0 0 22px rgba(159,184,255,.3);
+    opacity:0; animation:bubbleIn .4s ease forwards, bubbleOut .4s ease forwards 3.2s;
+    z-index:8; pointer-events:none;
+  }
+  @keyframes bubbleIn{ from{ opacity:0; transform:translate(-50%,-100%); } to{ opacity:1; transform:translate(-50%,-118%); } }
+  @keyframes bubbleOut{ from{ opacity:1; } to{ opacity:0; } }
+
+  /* ============ SCENE 3: FINALE ============ */
+  #finale-scene{
+    position:absolute; inset:0; z-index:11;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 24px;
+    opacity:0; pointer-events:none;
+    transition:opacity 1s ease;
+  }
+  #finale-scene.show{ opacity:1; pointer-events:auto; }
+
+  .finale-title{
+    font-family:'Cormorant Garamond',serif; font-weight:600; font-style:italic; font-size:3.1em; line-height:1.15;
+    background:linear-gradient(135deg, var(--gold), var(--star), var(--glow));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 40px rgba(243,207,122,.3);
+    margin-bottom:14px;
+  }
+  .finale-sub{ font-size:1.1em; opacity:.85; max-width:360px; line-height:1.6; margin-bottom:10px; }
+  .finale-sign{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.3em; color:var(--rose); margin-top:10px; }
+
+  .replay-btn{
+    margin-top:28px; font-family:'Quicksand',sans-serif; font-weight:600; font-size:.95em;
+    background:none; border:1px solid rgba(255,255,255,.4); color:var(--star);
+    padding:10px 26px; border-radius:30px; cursor:pointer;
+    transition:background .2s ease;
+  }
+  .replay-btn:hover{ background:rgba(255,255,255,.1); }
+
+  @media (max-width:600px){
+    .intro-title{ font-size:2.2em; }
+    .finale-title{ font-size:2.1em; }
+  }
+</style>
+</head>
+<body>
+
+<div id="sky"></div>
+<div class="moon" id="moon"></div>
+
+<!-- SCENE 1 -->
+<div id="intro-scene">
+  <span class="eyebrow">malam ini, langit punya cerita</span>
+  <span class="intro-title">Buatkan Aku<br>Satu Permohonan</span>
+  <p class="intro-sub">Aku gambar peta bintang khusus buat kamu. Tiap bintang nyimpen satu pesan. Sentuh satu-satu, ikuti garisnya, sampai semua bintang terhubung. ✨</p>
+  <button class="wish-btn" id="start-btn">Mulai lihat bintangnya ⭐</button>
+</div>
+
+<!-- SCENE 2 -->
+<div id="constellation-scene">
+  <div id="progress-label">0 dari 10 bintang ditemukan</div>
+  <svg id="const-svg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<!-- SCENE 3 -->
+<div id="finale-scene">
+  <div id="collage"></div>
+  <span class="finale-title">Semua Bintang<br>Sudah Menyala</span>
+  <p class="finale-sub">Sama seperti bintang-bintang ini, perasaanku ke kamu nggak pernah pudar. Selamat ulang tahun, sayang. Semoga semua harapanmu malam ini sampai ke langit. 🌙</p>
+  <span class="finale-sign">— selalu menatap langit yang sama denganmu 🤍</span>
+  <button class="replay-btn" id="replay-btn">lihat ulang peta bintangnya ↻</button>
+</div>
+
+<audio id="music" src="musik.mp3"></audio>
+
+<script>
+  // ===========================================================
+  // PESAN UNTUK SETIAP BINTANG — TAMBAH/GANTI DI SINI
+  // ===========================================================
+  const starMessages = [
+    "Kamu adalah alasan aku percaya cinta itu nyata.",
+    "Setiap hari bareng kamu rasanya seperti keajaiban kecil.",
+    "Terima kasih sudah jadi rumah buat hatiku.",
+    "Aku nggak butuh bintang jatuh, kamu udah cukup buat semua harapanku.",
+    "Senyummu lebih terang dari bintang manapun di sini.",
+    "Aku bersyukur banget kita berjalan di waktu yang sama.",
+    "Kamu yang bikin malam-malam biasa jadi spesial.",
+    "Semoga tahun ini semua impianmu pelan-pelan jadi nyata.",
+    "Aku sayang kamu, lebih dari yang bisa aku ucapkan.",
+    "Selamat ulang tahun, cinta yang paling aku syukuri."
+  ];
+
+  // bintang tertentu menampilkan foto kenangan saat menyala — index : nama file
+  const starPhotos = {
+    1: "foto1.JPG",
+    4: "foto2.JPG",
+    7: "foto3.JPG"
+  };
+
+  // ===========================================================
+  // LANGIT BERTABUR BINTANG (ambient)
+  // ===========================================================
+  const sky = document.getElementById('sky');
+  for (let i = 0; i < 90; i++) {
+    const t = document.createElement('div');
+    t.className = 'twinkle';
+    t.style.left = Math.random() * 100 + '%';
+    t.style.top = Math.random() * 100 + '%';
+    t.style.width = t.style.height = (Math.random() * 2 + 1) + 'px';
+    t.style.animationDuration = (1.5 + Math.random() * 3) + 's';
+    t.style.animationDelay = (Math.random() * 3) + 's';
+    sky.appendChild(t);
+  }
+
+  function shootStar() {
+    const s = document.createElement('div');
+    s.className = 'shooting-star';
+    s.style.top = (Math.random() * 40 + 5) + '%';
+    s.style.left = (Math.random() * 40 + 50) + '%';
+    s.style.animation = 'shoot 1.3s ease-out forwards';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1400);
+  }
+  setInterval(() => { if (Math.random() < 0.6) shootStar(); }, 3000);
+
+  // ===========================================================
+  // TITIK BINTANG MEMBENTUK HATI (parametrik)
+  // ===========================================================
+  const N = 10;
+  const points = [];
+  for (let i = 0; i < N; i++) {
+    const t = (i / (N - 1)) * Math.PI * 2 - Math.PI / 2 * 0; // spread around full curve but ordered
+    const tt = Math.PI - (i / (N - 1)) * Math.PI * 1.85 - 0.35; // custom spread on upper+lower heart
+    const x = 16 * Math.pow(Math.sin(tt), 3);
+    const y = -(13 * Math.cos(tt) - 5 * Math.cos(2 * tt) - 2 * Math.cos(3 * tt) - Math.cos(4 * tt));
+    points.push({ x: 200 + x * 9, y: 210 + y * 9 });
+  }
+
+  const svg = document.getElementById('const-svg');
+  const progressLabel = document.getElementById('progress-label');
+  let lit = 0;
+
+  // garis penghubung (tersembunyi sampai bintang sebelumnya menyala)
+  const lines = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', points[i].x); line.setAttribute('y1', points[i].y);
+    line.setAttribute('x2', points[i + 1].x); line.setAttribute('y2', points[i + 1].y);
+    line.classList.add('const-line');
+    line.style.opacity = 0;
+    svg.appendChild(line);
+    lines.push(line);
+  }
+
+  points.forEach((p, i) => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.classList.add('star-point');
+    g.dataset.index = i;
+
+    const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    halo.classList.add('halo');
+    halo.setAttribute('cx', p.x); halo.setAttribute('cy', p.y); halo.setAttribute('r', 9);
+
+    const core = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    core.classList.add('core');
+    core.setAttribute('cx', p.x); core.setAttribute('cy', p.y); core.setAttribute('r', 4.5);
+
+    g.appendChild(halo); g.appendChild(core);
+    svg.appendChild(g);
+
+    g.addEventListener('click', () => {
+      if (g.classList.contains('lit')) return;
+      const idxNum = parseInt(g.dataset.index);
+      if (idxNum !== lit) return; // harus urut
+      g.classList.add('lit');
+      lit++;
+      progressLabel.textContent = `${lit} dari ${points.length} bintang ditemukan`;
+      if (lines[idxNum - 1]) lines[idxNum - 1].style.opacity = 1;
+
+      if (starPhotos[idxNum]) {
+        core.style.opacity = 0; halo.style.opacity = 0;
+        showStarPhoto(p, starPhotos[idxNum]);
+      }
+      showBubble(p, starMessages[idxNum] || "Aku sayang kamu.", !!starPhotos[idxNum]);
+
+      if (lit === points.length) {
+        setTimeout(() => {
+          document.getElementById('constellation-scene').classList.remove('show');
+          document.getElementById('moon').classList.add('bright');
+          buildCollage();
+          document.getElementById('finale-scene').classList.add('show');
+          shootStar(); setTimeout(shootStar, 400);
+        }, 1600);
+      }
+    });
+  });
+
+  function toScreen(p) {
+    const rect = svg.getBoundingClientRect();
+    const scaleX = rect.width / 400, scaleY = rect.height / 400;
+    return { x: rect.left + p.x * scaleX, y: rect.top + p.y * scaleY };
+  }
+
+  function showBubble(p, text, hasPhoto) {
+    const s = toScreen(p);
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.style.left = s.x + 'px';
+    bubble.style.top = (hasPhoto ? s.y - 26 : s.y) + 'px';
+    bubble.textContent = text;
+    document.body.appendChild(bubble);
+    setTimeout(() => bubble.remove(), 3700);
+  }
+
+  function showStarPhoto(p, src) {
+    const s = toScreen(p);
+    const photo = document.createElement('div');
+    photo.className = 'star-photo';
+    photo.style.left = s.x + 'px';
+    photo.style.top = s.y + 'px';
+    photo.innerHTML = `<img src="${src}" alt="kenangan">`;
+    document.body.appendChild(photo);
+    requestAnimationFrame(() => requestAnimationFrame(() => photo.classList.add('grow')));
+  }
+
+  function buildCollage() {
+    const collage = document.getElementById('collage');
+    collage.innerHTML = '';
+    const photos = Object.values(starPhotos);
+    const spots = [
+      { left: '30%', top: '22%' }, { left: '70%', top: '22%' }, { left: '50%', top: '40%' }
+    ];
+    photos.forEach((src, i) => {
+      const d = document.createElement('div');
+      d.className = 'collage-photo';
+      d.style.left = (spots[i] || spots[0]).left;
+      d.style.top = (spots[i] || spots[0]).top;
+      d.innerHTML = `<img src="${src}" alt="kenangan">`;
+      collage.appendChild(d);
+      setTimeout(() => d.classList.add('show'), 300 + i * 250);
+    });
+  }
+
+  // ===========================================================
+  // ALUR SCENE
+  // ===========================================================
+  const introScene = document.getElementById('intro-scene');
+  const constScene = document.getElementById('constellation-scene');
+  const finaleScene = document.getElementById('finale-scene');
+  const audio = document.getElementById('music');
+
+  document.getElementById('start-btn').addEventListener('click', () => {
+    audio.play().catch(() => {});
+    introScene.classList.add('hide');
+    constScene.classList.add('show');
+  });
+
+  document.getElementById('replay-btn').addEventListener('click', () => {
+    finaleScene.classList.remove('show');
+    document.getElementById('moon').classList.remove('bright');
+    document.querySelectorAll('.star-point').forEach(s => {
+      s.classList.remove('lit');
+      const core = s.querySelector('.core'), halo = s.querySelector('.halo');
+      if (core) core.style.opacity = '';
+      if (halo) halo.style.opacity = '';
+    });
+    document.querySelectorAll('.star-photo').forEach(el => el.remove());
+    document.getElementById('collage').innerHTML = '';
+    lines.forEach(l => l.style.opacity = 0);
+    lit = 0;
+    progressLabel.textContent = `0 dari ${points.length} bintang ditemukan`;
+    introScene.classList.remove('hide');
+  });
+</script>
+</body>
+</html>
